@@ -1,0 +1,14 @@
+.git
+.gitignore
+*.md
+!README.md
+tests/
+docs/
+.env
+.env.*
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+vendor/
+node_modules/

@@ -1,0 +1,82 @@
+# =============================================================================
+# AmneziaWG 2.0 Client Configuration — Example
+# =============================================================================
+# Copy this file and fill in your values. Mount at:
+#   docker run -v /path/to/this/file:/config/amneziawg.conf:ro ...
+#
+# All AmneziaWG 2.0 obfuscation parameters are documented below.
+# These MUST match your server's configuration.
+# =============================================================================
+
+[Interface]
+
+# Your client private key (base64) — NEVER share this!
+# Generate with: awg genkey
+PrivateKey = <YOUR_CLIENT_PRIVATE_KEY_HERE>
+
+# Tunnel IP address(es)
+Address = 10.0.0.2/32
+
+# DNS server (optional — used when tunnel is up)
+DNS = 1.1.1.1, 8.8.8.8
+
+# =============================================================================
+# AmneziaWG 2.0 Obfuscation Parameters
+# =============================================================================
+# These parameters provide deep packet inspection (DPI) evasion.
+# Both client and server MUST use identical values.
+# =============================================================================
+
+# --- Junk Packets (Jc, Jmin, Jmax) ---
+# Number of junk packets to send per handshake
+# Jc = 4
+# Minimum junk packet size (bytes)
+# Jmin = 50
+# Maximum junk packet size (bytes)
+# Jmax = 1000
+
+# --- Packet Padding (S1, S2, S3, S4) ---
+# Adds random padding to packets to further evade DPI
+# S1 = 86
+# S2 = 12
+# S3 = 25
+# S4 = 15
+
+# --- Dynamic Headers (H1, H2, H3, H4) ---
+# 4-tuple of header values for header-based obfuscation
+# Can be specified as single values or ranges (e.g. H1 = 100-200)
+# H1 = 1755269708
+# H2 = 2101520157
+# H3 = 1829552136
+# H4 = 2016351429
+
+# --- CPS Signature Packets (I1, I2, I3, I4, I5) ---
+# Custom Protocol Signature — defines obfuscation protocol
+# Format: <b ADDR><r BITS><t> for IPv4, similar for IPv6
+# I1 = <b 0xc0000000><r 16><t>
+# I2 =
+# I3 =
+# I4 =
+# I5 =
+
+# =============================================================================
+# Peer Section — Server Connection
+# =============================================================================
+
+[Peer]
+
+# Server public key (from server admin)
+# Generate matching keypair with: awg pubkey < private.key
+PublicKey = <YOUR_SERVER_PUBLIC_KEY_HERE>
+
+# Server endpoint: IP or hostname + port
+Endpoint = vpn.example.com:51820
+
+# Which traffic to route through the tunnel
+# 0.0.0.0/0 routes ALL traffic (full tunnel)
+# 10.0.0.0/8 routes only RFC1918 private subnets (split tunnel)
+AllowedIPs = 0.0.0.0/0
+
+# Optional: keep connection alive (seconds)
+# Needed for NATted connections — 25 is common
+PersistentKeepalive = 25
