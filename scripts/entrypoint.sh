@@ -2,8 +2,9 @@
 # =============================================================================
 # AmneziaWG 2.0 Docker Client — Entrypoint Script
 # =============================================================================
-# This script starts the AmneziaWG client in a Docker container.
-# It validates the config, brings up the tunnel, and handles graceful shutdown.
+# Starts the AmneziaWG client in a Docker container.
+# awg-quick handles tunnel setup, routing, and its own kill-switch.
+# This script handles DNS (since resolvconf is stubbed) and graceful shutdown.
 #
 # Usage:
 #   Mount your config: -v /path/to/amneziawg.conf:/config/amneziawg.conf
@@ -22,6 +23,14 @@ CONFIG_FILE="/config/amneziawg.conf"
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "ERROR: Config not found at $CONFIG_FILE"
     echo "Mount your AmneziaWG config with: -v /path/to/config:/config/amneziawg.conf"
+    exit 1
+fi
+
+# Check for TUN device (required for AmneziaWG)
+if [ ! -c /dev/net/tun ]; then
+    echo "ERROR: /dev/net/tun not found."
+    echo "Run Docker with: --device /dev/net/tun:/dev/net/tun"
+    echo "Also ensure the host has the tun module loaded: sudo modprobe tun"
     exit 1
 fi
 
@@ -56,7 +65,6 @@ echo "================================"
 # --- Graceful Shutdown Trap -----------------------------------------------
 cleanup() {
     echo "Caught SIGTERM/SIGINT — shutting down AmneziaWG..."
-    echo "Running: awg-quick down $CONFIG_FILE"
     awg-quick down "$CONFIG_FILE" 2>/dev/null || true
     echo "Shutdown complete."
     exit 0
@@ -67,7 +75,21 @@ trap cleanup SIGTERM SIGINT
 echo "Starting AmneziaWG client..."
 awg-quick up "$CONFIG_FILE"
 
-# Verify interface is up
+# --- Configure DNS manually (resolvconf is stubbed) -----------------------
+DNS_SERVERS=$(sed -n '/^\[Interface\]/,/^\[/{/^[Dd][Nn][Ss][ \t]*=/p}' "$CONFIG_FILE" | sed 's/^[Dd][Nn][Ss][ \t]*=[ \t]*//;s/,/ /g')
+if [ -n "$DNS_SERVERS" ]; then
+    echo "Configuring DNS: $DNS_SERVERS"
+    cp /etc/resolv.conf /etc/resolv.conf.bak 2>/dev/null || true
+    > /etc/resolv.conf
+    for dns in $DNS_SERVERS; do
+        echo "nameserver $dns" >> /etc/resolv.conf
+    done
+    echo "DNS configured successfully."
+else
+    echo "No DNS servers found in config, skipping DNS setup."
+fi
+
+# --- Verify tunnel is up ---------------------------------------------------
 sleep 1
 if ! ip link show type awg 2>/dev/null && ! ip link show 2>/dev/null | grep -q '^awg'; then
     echo "ERROR: AmneziaWG interface failed to come up."
@@ -75,13 +97,12 @@ if ! ip link show type awg 2>/dev/null && ! ip link show 2>/dev/null | grep -q '
     exit 1
 fi
 
-echo "AmneziaWG interface is up."
+echo "AmneziaWG interface is up. Kill-switch is handled by awg-quick."
 echo "Container staying alive — logs follow."
 
-# Keep container alive, pipe output to stdout
-# In production: tail -f /dev/null
-# For debugging: monitor the tunnel in background
-tail -f /dev/null &
-
-# Wait for any sub-process
-wait $!
+# Drop privileges for the long-running process if running as root
+if [ "$(id -u)" -eq 0 ] && id amneziawg >/dev/null 2>&1; then
+    exec su -s /bin/bash amneziawg -c "exec tail -f /dev/null"
+else
+    exec tail -f /dev/null
+fi

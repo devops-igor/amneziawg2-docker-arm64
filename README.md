@@ -13,9 +13,6 @@ The AmneziaWG kernel module requires compiling against host kernel headers — i
 ## Quick Start
 
 ```bash
-# Pull (when published)
-docker pull ghcr.io/igorkon/amneziawg-client:latest
-
 # Run
 docker run \
   --name amneziawg-client \
@@ -24,7 +21,7 @@ docker run \
   --sysctl net.ipv4.ip_forward=1 \
   --sysctl net.ipv4.conf.all.src_valid_mark=1 \
   -v /path/to/your/amneziawg.conf:/config/amneziawg.conf:ro \
-  ghcr.io/igorkon/amneziawg-client:latest
+  amneziawg-client:local
 ```
 
 ---
@@ -65,7 +62,7 @@ The entrypoint validates:
 ```bash
 docker run \
   --cap-add NET_ADMIN          # Required to create TUN interface
-  --device /dev/netun:/dev/net/tun  # TUN device access
+  --device /dev/net/tun:/dev/net/tun  # TUN device access
   --sysctl net.ipv4.ip_forward=1   # Enable packet forwarding
   --sysctl net.ipv4.conf.all.src_valid_mark=1  # Required for WireGuard/AmneziaWG
   ...
@@ -149,7 +146,7 @@ version: "3.8"
 
 services:
   amneziawg:
-    image: ghcr.io/igorkon/amneziawg-client:latest
+    # image: ghcr.io/igorkon/amneziawg-client:latest  # uncomment when published
     container_name: amneziawg-client
     cap_add:
       - NET_ADMIN
@@ -181,14 +178,20 @@ services:
 
 ```bash
 # Clone the repo
-git clone https://github.com/igorkon/amneziawg-client-docker.git
-cd amneziawg-client-docker
+git clone https://github.com/devops-igor/amneziawg2-docker-arm64.git
+cd amneziawg2-docker-arm64
 
 # Build for your current architecture
 docker build -t amneziawg-client:local .
 
 # Or build for arm64 explicitly
 docker buildx build --platform linux/arm64 -t amneziawg-client:local .
+
+# Override version pins (defaults: v0.2.16, v1.0.20260223)
+docker buildx build --platform linux/arm64 \
+  --build-arg AWG_GO_VERSION=v0.2.16 \
+  --build-arg AWG_TOOLS_VERSION=v1.0.20260223 \
+  -t amneziawg-client:local .
 ```
 
 ### Build Command That Worked
@@ -219,12 +222,6 @@ docker inspect --format='{{.State.Health.Status}}' <container_id>
 Expected image size: **< 100MB** (target: < 50MB)
 
 ---
-
-## Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| None currently | — | Configuration is file-only for security |
 
 > **Security note:** Keep your `.conf` file backed up and never commit it to version control.
 
@@ -284,7 +281,7 @@ docker logs <container>
 ## Architecture
 
 - **Build stage:** `golang:alpine` — compiles `amneziawg-go` and `amneziawg-tools` from source
-- **Runtime stage:** `alpine:latest` — minimal image with only runtime deps
+- **Runtime stage:** `alpine:3.20` — minimal image with only runtime deps
 - **Binaries:** `amneziawg-go` (userspace WireGuard), `awg` (CLI tool), `awg-quick` (interface manager)
 
 ---
@@ -293,7 +290,8 @@ docker logs <container>
 
 - No hardcoded secrets or keys in any file
 - Config file should be mounted read-only (`:ro`)
-- Container runs as non-root user `amneziawg:1000`
+- Container starts as root (required for networking) and drops to non-root user `amneziawg:1000` for the long-running process
+- The `amneziawg` user has passwordless sudo restricted to networking commands (`ip`, `iptables`, `awg`, `awg-quick`) — this is defense-in-depth, not a true sandbox, since the container already holds `NET_ADMIN`
 - Review Docker's capability requirements before running in production
 
 ---
