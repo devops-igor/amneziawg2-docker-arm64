@@ -1,12 +1,30 @@
 # amneziawg-client-docker
 
-> **AmneziaWG 2.0 Docker Client** — Userspace VPN client for `linux/arm64`
+[![Docker Pulls](https://img.shields.io/docker/pulls/devopsigor/awg2-arm64)](https://hub.docker.com/r/devopsigor/awg2-arm64)
+[![License](https://img.shields.io/github/license/devops-igor/amneziawg2-docker-arm64)](LICENSE)
+[![Docker Image Size](https://img.shields.io/docker/image-size/devopsigor/awg2-arm64/latest)](https://hub.docker.com/r/devopsigor/awg2-arm64)
+[![Platform](https://img.shields.io/badge/platform-linux%2Farm64-blue)]()
 
-A minimal Docker image that runs [AmneziaWG 2.0](https://github.com/amnezia-vpn/amneziawg-go) client using the userspace `amneziawg-go` implementation. No kernel module required — works on Raspberry Pi, ARM servers, NAS devices, and anywhere Docker runs.
+> **AmneziaWG 2.0 Docker Client** - Userspace VPN client for `linux/arm64`
 
-## Why Userspace?
+---
 
-The AmneziaWG kernel module requires compiling against host kernel headers — impractical in a container. `amneziawg-go` runs fully in userspace and works everywhere Docker runs. Full AmneziaWG 2.0 obfuscation support is preserved.
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Volume Mount](#volume-mount)
+- [Required Capabilities & Sysctls](#required-capabilities--sysctls)
+- [Healthcheck](#healthcheck)
+- [Example Config File](#example-config-file)
+- [Docker Compose](#docker-compose)
+- [Build from Source](#build-from-source)
+- [Security Notes](#security-notes)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+
+---
+
+A minimal Docker image that runs [AmneziaWG 2.0](https://github.com/amnezia-vpn/amneziawg-go) client using the userspace `amneziawg-go` implementation. No kernel module required - works on Raspberry Pi, ARM servers, NAS devices, and anywhere Docker runs.
 
 ---
 
@@ -22,22 +40,6 @@ docker run \
   --sysctl net.ipv4.conf.all.src_valid_mark=1 \
   -v /path/to/your/amneziawg.conf:/config/amneziawg.conf:ro \
   devopsigor/awg2-arm64:latest
-```
-
----
-
-## Prerequisites
-
-- **Docker** 20.10+ with `docker buildx` for multi-arch builds
-- **TUN device** — must be available inside the container (`--device /dev/net/tun:/dev/net/tun`)
-- **Linux host** — kernel support for TUN/TAP (`CONFIG_TUN=m`)
-- **Capabilities:** `NET_ADMIN` is required to create the network interface
-
-### Check TUN availability on host
-
-```bash
-ls -la /dev/net/tun
-# Should show: crw-rw---- 1 root root 10, 200 ... /dev/net/tun
 ```
 
 ---
@@ -85,51 +87,6 @@ docker exec amneziawg-client awg show
 ```
 
 Healthcheck runs `awg show` every 30s. If it fails 3 times, the container is marked **unhealthy**.
-
----
-
-## AmneziaWG 2.0 Obfuscation Parameters
-
-AmneziaWG 2.0 adds powerful DPI-evasion features. Your config file **must** include matching values from your server admin:
-
-### Junk Packets
-
-```
-Jc = 4         # Number of junk packets per handshake
-Jmin = 50      # Min junk packet size (bytes)
-Jmax = 1000    # Max junk packet size (bytes)
-```
-
-### Packet Padding
-
-```
-S1 = 86        # Init byte count
-S2 = 12        # Response byte count
-S3 = 25        # Padding divisor
-S4 = 15        # Padding multiplier
-```
-
-### Dynamic Headers
-
-```
-H1 = 1755269708    # Header value 1
-H2 = 2101520157    # Header value 2
-H3 = 1829552136    # Header value 3
-H4 = 2016351429    # Header value 4
-# Can also be ranges: H1 = 100-200
-```
-
-### CPS Signature Packets
-
-```
-I1 = <b 0xc0000000><r 16><t>   # IPv4 signature pattern
-I2 =                              # Leave empty or specify
-I3 =
-I4 =
-I5 =
-```
-
-> **Important:** All obfuscation params MUST match your server exactly. Contact your server admin for the correct values.
 
 ---
 
@@ -223,10 +180,6 @@ Expected image size: **< 100MB** (target: < 50MB, optimized for a minimal footpr
 
 ---
 
-> **Security note:** Keep your `.conf` file backed up and never commit it to version control.
-
----
-
 ## Troubleshooting
 
 ### "Device or resource busy" when accessing `/dev/net/tun`
@@ -270,20 +223,6 @@ The config may be invalid or the tunnel failed to start. Check logs:
 docker logs <container>
 ```
 
-### Obfuscation params not working
-
-- Verify your config has all required `Jc`, `S1-S4`, `H1-H4`, `I1-I5` values
-- They MUST match your server config exactly
-- If values are missing in your config, the server may be using defaults — check with your server admin
-
----
-
-## Architecture
-
-- **Build stage:** `golang:alpine` — compiles `amneziawg-go` and `amneziawg-tools` from source
-- **Runtime stage:** `alpine:3.20` — minimal image with only runtime deps
-- **Binaries:** `amneziawg-go` (userspace WireGuard), `awg` (CLI tool), `awg-quick` (interface manager)
-
 ---
 
 ## Security Notes
@@ -291,11 +230,11 @@ docker logs <container>
 - No hardcoded secrets or keys in any file
 - Config file should be mounted read-only (`:ro`)
 - Container starts as root (required for networking) and drops to non-root user `amneziawg:1000` for the long-running process
-- The `amneziawg` user has passwordless sudo restricted to networking commands (`ip`, `iptables`, `awg`, `awg-quick`) — this is defense-in-depth, not a true sandbox, since the container already holds `NET_ADMIN`
+- The `amneziawg` user has passwordless sudo restricted to networking commands (`ip`, `iptables`, `awg`, `awg-quick`) - this is defense-in-depth, not a true sandbox, since the container already holds `NET_ADMIN`
 - Review Docker's capability requirements before running in production
 
 ---
 
 ## License
 
-MIT — See repository for details.
+MIT - See repository for details.
