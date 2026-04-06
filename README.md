@@ -1,11 +1,11 @@
-# amneziawg-client-docker
+# AmneziaWG 2.0 Docker Client
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/devopsigor/awg2-arm64)](https://hub.docker.com/r/devopsigor/awg2-arm64)
 [![License](https://img.shields.io/github/license/devops-igor/amneziawg2-docker-arm64)](LICENSE)
 [![Docker Image Size](https://img.shields.io/docker/image-size/devopsigor/awg2-arm64/latest)](https://hub.docker.com/r/devopsigor/awg2-arm64)
 [![Platform](https://img.shields.io/badge/platform-linux%2Farm64-blue)]()
 
-> **AmneziaWG 2.0 Docker Client** - Userspace VPN client for `linux/arm64`
+> Lightweight Docker image for running AmneziaWG 2.0 VPN on ARM64 devices
 
 ---
 
