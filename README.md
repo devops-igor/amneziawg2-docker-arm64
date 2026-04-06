@@ -21,7 +21,7 @@ docker run \
   --sysctl net.ipv4.ip_forward=1 \
   --sysctl net.ipv4.conf.all.src_valid_mark=1 \
   -v /path/to/your/amneziawg.conf:/config/amneziawg.conf:ro \
-  amneziawg-client:local
+  devopsigor/awg2-arm64:latest
 ```
 
 ---
@@ -219,7 +219,7 @@ docker run --rm \
 docker inspect --format='{{.State.Health.Status}}' <container_id>
 ```
 
-Expected image size: **< 100MB** (target: < 50MB)
+Expected image size: **< 100MB** (target: < 50MB, optimized for a minimal footprint)
 
 ---
 
