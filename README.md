@@ -99,11 +99,9 @@ See [`config/amneziawg.conf.example`](config/amneziawg.conf.example) for a fully
 ## Docker Compose
 
 ```yaml
-version: "3.8"
-
 services:
   amneziawg:
-    # image: ghcr.io/igorkon/amneziawg-client:latest  # uncomment when published
+    image: devopsigor/awg2-arm64:latest 
     container_name: amneziawg-client
     cap_add:
       - NET_ADMIN
