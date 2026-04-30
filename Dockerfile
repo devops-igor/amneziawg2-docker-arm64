@@ -10,7 +10,7 @@ ARG BUILDARCH
 ARG GOARM
 
 # Version pinning — override at build time without editing Dockerfile
-ARG AWG_GO_VERSION=v0.2.16
+ARG AWG_GO_VERSION=v0.2.17
 ARG AWG_TOOLS_VERSION=v1.0.20260223
 
 # Install build dependencies
