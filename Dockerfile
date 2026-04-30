@@ -54,7 +54,7 @@ RUN mkdir -p /out/bin && \
 # =============================================================================
 # Stage 2: Runtime — minimal Alpine image with binaries
 # =============================================================================
-FROM alpine:3.20 AS runtime
+FROM alpine:3.22 AS runtime
 
 # Install runtime dependencies
 RUN apk add --no-cache \
