@@ -10,8 +10,8 @@ ARG BUILDARCH
 ARG GOARM
 
 # Version pinning — override at build time without editing Dockerfile
-ARG AWG_GO_VERSION=v3.0.2
-ARG AWG_TOOLS_VERSION=v1.0.20260618-2
+ARG AWG_GO_VERSION=v3.1.20260814
+ARG AWG_TOOLS_VERSION=v3.1.20260812
 
 # Install build dependencies
 RUN apk add --no-cache \
@@ -54,7 +54,7 @@ RUN mkdir -p /out/bin && \
 # =============================================================================
 # Stage 2: Runtime — minimal Alpine image with binaries
 # =============================================================================
-FROM alpine:3.23 AS runtime
+FROM alpine:3.24 AS runtime
 
 # Install runtime dependencies
 RUN apk add --no-cache \
